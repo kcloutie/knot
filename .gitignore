@@ -1,0 +1,13 @@
+/local
+**.tar.gz
+**.sha256
+**.zip
+/dist
+/logs
+/modules
+**/got.json
+**/want.json
+knot.log
+knot.exe~
+**.exe
+/bin
