@@ -12,7 +12,7 @@ type CliOpts struct {
 	AskOpts    survey.AskOpt
 }
 
-func NewAskopts(opt *survey.AskOptions) error {
+func NewAskOpts(opt *survey.AskOptions) error {
 	opt.Stdio = terminal.Stdio{
 		In:  os.Stdin,
 		Out: os.Stdout,
@@ -23,6 +23,6 @@ func NewAskopts(opt *survey.AskOptions) error {
 
 func NewCliOptions() *CliOpts {
 	return &CliOpts{
-		AskOpts: NewAskopts,
+		AskOpts: NewAskOpts,
 	}
 }

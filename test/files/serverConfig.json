@@ -1,0 +1,23 @@
+{
+  "notifications": [
+    {
+      "name": "log_no_cel",
+      "CelExpressionFilter": "",
+      "disabled": true,
+      "type": "log",
+      "properties": {
+        "message": "hello {{ .data.prop1 }}"
+      }
+    },
+    {
+      "name": "log_enabled_attribute_true",
+      "CelExpressionFilter": "attributes.enabled == 'true'",
+      "disabled": true,
+      "type": "log",
+      "properties": {
+        "message": "hello {{ .data.prop1 }}"
+      }
+    }
+  ],
+  "traceHeaderKey": "X-Cloud-Trace-Context"
+}

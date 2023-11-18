@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -115,15 +114,4 @@ func (s *IOStreams) IsStdoutTTY() bool {
 
 func isTerminal(f *os.File) bool {
 	return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
-}
-
-func IOTest() (*IOStreams, *bytes.Buffer, *bytes.Buffer, *bytes.Buffer) {
-	in := &bytes.Buffer{}
-	out := &bytes.Buffer{}
-	errOut := &bytes.Buffer{}
-	return &IOStreams{
-		In:     io.NopCloser(in),
-		Out:    out,
-		ErrOut: errOut,
-	}, in, out, errOut
 }

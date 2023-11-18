@@ -23,6 +23,7 @@ var (
 	logger *zap.Logger
 )
 
+
 const (
 	RootCommandKey = "root_command"
 	SubCommandKey  = "sub_command"
@@ -140,17 +141,29 @@ func Get() *zap.Logger {
 // is associated, the default logger is returned, unless it is nil
 // in which case a disabled logger is returned.
 func FromCtx(ctx context.Context) *zap.Logger {
-	if l, ok := ctx.Value(ctxKey{}).(*zap.Logger); ok {
+	l, exists := ctx.Value(ctxKey{}).(*zap.Logger)
+	if exists {
 		return l
-	} else if l := logger; l != nil {
-		return l
+	} else {
+		l := logger
+		if l != nil {
+			return l
+		}
 	}
 	return zap.NewNop()
 }
 
+func FromCtxWithCtx(ctx context.Context, fields ...zapcore.Field) (*zap.Logger, context.Context) {
+	log := FromCtx(ctx)
+	log = log.With(fields...)
+	ctx = WithCtx(ctx, log)
+	return log, ctx
+}
+
 // WithCtx returns a copy of ctx with the Logger attached.
 func WithCtx(ctx context.Context, l *zap.Logger) context.Context {
-	if lp, ok := ctx.Value(ctxKey{}).(*zap.Logger); ok {
+	lp, exists := ctx.Value(ctxKey{}).(*zap.Logger)
+	if exists {
 		if lp == l {
 			return ctx
 		}

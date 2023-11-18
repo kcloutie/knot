@@ -5,11 +5,12 @@ import (
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
+	"github.com/kcloutie/knot/pkg/api"
 	"github.com/kcloutie/knot/pkg/cli"
+	"github.com/kcloutie/knot/pkg/config"
 	"github.com/kcloutie/knot/pkg/params/settings"
 	"github.com/spf13/cobra"
 
-	"github.com/kcloutie/knot/pkg/api"
 	"github.com/kcloutie/knot/pkg/cmd"
 	"github.com/kcloutie/knot/pkg/params"
 )
@@ -39,7 +40,7 @@ func ServerCommand(run *params.Run, ioStreams *cli.IOStreams) *cobra.Command {
 		`),
 		Run: func(cCmd *cobra.Command, args []string) {
 			ctx := cmd.InitContextWithLogger("run", "server")
-			serverConfig := api.NewServerConfiguration()
+			serverConfig := config.NewServerConfiguration()
 			if options.ConfigFilePath != "" {
 				data, err := os.ReadFile(options.ConfigFilePath)
 				if err != nil {
@@ -51,13 +52,14 @@ func ServerCommand(run *params.Run, ioStreams *cli.IOStreams) *cobra.Command {
 				}
 			}
 
-			ctx = api.WithCtx(ctx, serverConfig)
+			ctx = config.WithCtx(ctx, serverConfig)
 
 			options.IoStreams = ioStreams
 			options.CliOpts = cli.NewCliOptions()
 			options.IoStreams.SetColorEnabled(!settings.RootOptions.NoColor)
 			cmd.CheckForUnknownArgsExitWhenFound(args, ioStreams)
-			err := serverConfig.Start(ctx, options.ListeningAddr, options.CacheInSeconds)
+			router := api.CreateRouter(ctx, options.CacheInSeconds)
+			err := api.Start(ctx, router, serverConfig, options.ListeningAddr)
 			if err != nil {
 				cmd.WriteCmdErrorToScreen(err.Error(), ioStreams, true, true)
 			}

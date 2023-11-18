@@ -1,8 +1,10 @@
 package knot
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 
 	"os"
 
@@ -63,4 +65,28 @@ func Root(cliParams *params.Run) *cobra.Command {
 	cCmd.AddCommand(run.Root(cliParams, ioStreams))
 
 	return cCmd
+}
+
+func Test_ExecuteCommand(cliParams *params.Run, args []string) (string, string, error) {
+	cmd := Root(cliParams)
+	b := bytes.NewBufferString("")
+	be := bytes.NewBufferString("")
+	cmd.SetOut(b)
+	cmd.SetErr(be)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	if err != nil {
+		return "", "", err
+	}
+
+	out, err := io.ReadAll(b)
+	if err != nil {
+		return "", "", err
+	}
+	outErr, err := io.ReadAll(be)
+	if err != nil {
+		return "", "", err
+	}
+
+	return string(out), string(outErr), nil
 }

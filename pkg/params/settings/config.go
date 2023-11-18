@@ -1,8 +1,11 @@
 package settings
 
 const (
-	CliBinaryName         = "knot"
-	DebugModeLoggerEnvVar = "KNOT_DEBUG"
+	CliBinaryName               = "knot"
+	DebugModeLoggerEnvVar       = "KNOT_DEBUG"
+	PubSubEndpoint              = "pubsub"
+	GoTemplateDefaultDelimLeft  = "{{"
+	GoTemplateDefaultDelimRight = "}}"
 )
 
 var (

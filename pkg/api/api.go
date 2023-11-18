@@ -2,37 +2,51 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
 	"github.com/gin-gonic/gin"
+	"github.com/kcloutie/knot/pkg/config"
+	knothttp "github.com/kcloutie/knot/pkg/http"
+	"github.com/kcloutie/knot/pkg/listener"
+	uuid "github.com/satori/go.uuid"
 )
 
-var config *ServerConfiguration
+func CreateRouter(ctx context.Context, cacheInSeconds int) *gin.Engine {
+	router := gin.Default()
 
-func (c *ServerConfiguration) Start(ctx context.Context, listeningAddr string, cacheInSeconds int) error {
-	r := gin.Default()
-
+	router.Use(RequestIdMiddleware())
+	router.Use(TraceLogsMiddleware())
 	memoryStore := persist.NewMemoryStore(time.Duration(cacheInSeconds) * time.Second)
 
-	r.GET("", cache.CacheByRequestURI(memoryStore, time.Duration(cacheInSeconds)*time.Second), func(c *gin.Context) {
+	router.GET("", cache.CacheByRequestURI(memoryStore, time.Duration(cacheInSeconds)*time.Second), func(c *gin.Context) {
 		Home(ctx, c)
 	})
 
-	r.GET("/healthz", Health)
+	router.GET("/healthz", Health)
 
-	apiV1 := r.Group("/api/v1")
+	apiV1 := router.Group("/api/v1")
 	apiV1.Use()
 	{
-
+		for _, l := range listener.GetListeners() {
+			apiV1.POST(fmt.Sprintf("/%s", l.GetApiPath()), func(c *gin.Context) {
+				ExecuteListener(ctx, c, l)
+			})
+		}
 	}
+	return router
+}
+
+func Start(ctx context.Context, router *gin.Engine, cfg *config.ServerConfiguration, listeningAddr string) error {
+	knothttp.TraceHeaderKey = cfg.TraceHeaderKey
 
 	server := &http.Server{
 		Addr:              listeningAddr,
 		ReadHeaderTimeout: 3 * time.Second,
-		Handler:           r,
+		Handler:           router,
 	}
 
 	err := server.ListenAndServe()
@@ -43,24 +57,23 @@ func (c *ServerConfiguration) Start(ctx context.Context, listeningAddr string, c
 	return nil
 }
 
-func NewServerConfiguration() *ServerConfiguration {
-	return &ServerConfiguration{}
-}
-
-func FromCtx(ctx context.Context) *ServerConfiguration {
-	if l, ok := ctx.Value(ctxConfigKey{}).(*ServerConfiguration); ok {
-		return l
-	} else if l := config; l != nil {
-		return l
+func RequestIdMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rid := uuid.NewV4().String()
+		c.Set(knothttp.RequestHeaderKey, rid)
+		c.Writer.Header().Set(knothttp.RequestHeaderKey, rid)
+		c.Next()
 	}
-	return NewServerConfiguration()
 }
 
-func WithCtx(ctx context.Context, l *ServerConfiguration) context.Context {
-	if lp, ok := ctx.Value(ctxConfigKey{}).(*ServerConfiguration); ok {
-		if lp == l {
-			return ctx
+func TraceLogsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		val, exists := c.Request.Header[knothttp.TraceHeaderKey]
+		if exists {
+			if len(val) == 1 {
+				c.Set(knothttp.TraceHeaderKey, val[0])
+			}
 		}
+		c.Next()
 	}
-	return context.WithValue(ctx, ctxConfigKey{}, l)
 }

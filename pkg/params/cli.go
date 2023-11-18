@@ -28,11 +28,3 @@ func NewCliOptions() *CliOpts {
 func (c *CliOpts) Ask(qss []*survey.Question, ans interface{}) error {
 	return survey.Ask(qss, ans, c.AskOpts)
 }
-
-type PwshCommand struct {
-	Name     *string `json:"name,omitempty" yaml:"name,omitempty"`
-	Version  *string `json:"version,omitempty" yaml:"version,omitempty"`
-	Source   *string `json:"source,omitempty" yaml:"source,omitempty"`
-	Synopsis *string `json:"synopsis,omitempty" yaml:"synopsis,omitempty"`
-	Help     *string `json:"help,omitempty" yaml:"help,omitempty"`
-}
