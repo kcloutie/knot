@@ -9,6 +9,7 @@ import (
 )
 
 type ListenerInterface interface {
+	Initialize(ctx context.Context) error
 	GetName() string
 	GetApiPath() string
 	ParsePayload(ctx context.Context, log *zap.Logger, payload []byte) (*message.NotificationData, *http.ErrorDetail)

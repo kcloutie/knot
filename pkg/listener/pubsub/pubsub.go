@@ -23,6 +23,10 @@ func New() *Listener {
 	}
 }
 
+func (v *Listener) Initialize(ctx context.Context) error {
+	return nil
+}
+
 func (v *Listener) GetName() string {
 	return v.Name
 }
@@ -31,8 +35,11 @@ func (v *Listener) GetApiPath() string {
 	return v.ApiPath
 }
 
+// https://cloud.google.com/pubsub/docs/publish-receive-messages-client-library
+// https://cloud.google.com/pubsub/docs/samples/pubsub-subscribe-avro-records
 func (v *Listener) ParsePayload(ctx context.Context, log *zap.Logger, payload []byte) (*message.NotificationData, *http.ErrorDetail) {
 	request := &pubsub.Message{}
+
 	err := json.Unmarshal(payload, request)
 	if err != nil {
 		mess := fmt.Sprintf("Failed to unmarshal body to the pubsub.Message type. Error: %v", err)
@@ -44,6 +51,7 @@ func (v *Listener) ParsePayload(ctx context.Context, log *zap.Logger, payload []
 			Instance: v.GetApiPath(),
 		}
 		log.Error(mess)
+
 		return nil, errD
 	}
 
@@ -59,6 +67,5 @@ func (v *Listener) ParsePayload(ctx context.Context, log *zap.Logger, payload []
 		log.Error(err.Error())
 		return nil, errD
 	}
-
 	return &notifyData, nil
 }

@@ -70,7 +70,7 @@ func TestMatches(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				notification: config.Notification{
-					Name:                "no filter",
+					Name:                "with filter",
 					CelExpressionFilter: "data.prop1 == 'val1'",
 					Disabled:            false,
 				},
@@ -88,7 +88,7 @@ func TestMatches(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				notification: config.Notification{
-					Name:                "no filter",
+					Name:                "with filter",
 					CelExpressionFilter: "data.prop1 == 'val2'",
 					Disabled:            false,
 				},

@@ -6,7 +6,9 @@
       "disabled": true,
       "type": "log",
       "properties": {
-        "message": "hello {{ .data.prop1 }}"
+        "message": {
+          "value": "hello {{ .data.prop1 }}"
+        }
       }
     },
     {
@@ -15,7 +17,9 @@
       "disabled": true,
       "type": "log",
       "properties": {
-        "message": "hello {{ .data.prop1 }}"
+        "message": {
+          "value": "hello {{ .data.prop1 }}"
+        }
       }
     }
   ],

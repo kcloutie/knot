@@ -21,7 +21,7 @@ func TestProvider_SendNotification(t *testing.T) {
 		name    string
 		v       *Provider
 		args    args
-		want    string
+		wantLog string
 		wantErr bool
 	}{
 		{
@@ -36,11 +36,12 @@ func TestProvider_SendNotification(t *testing.T) {
 					ID:         "1",
 				},
 				notification: config.Notification{
-					Properties: map[string]string{
-						"message": "hello {{ .data.prop1 }}",
+					Properties: map[string]config.PropertyAndValue{
+						"message": {Value: "hello {{ .data.prop1 }}"},
 					},
 				},
 			},
+			wantLog: "hello world",
 		},
 	}
 	for _, tt := range tests {
@@ -51,12 +52,14 @@ func TestProvider_SendNotification(t *testing.T) {
 			tt.v.SetLogger(observedLogger)
 			tt.v.SetNotification(tt.args.notification)
 
-			if err := tt.v.SendNotification(context.Background(), tt.args.data); (err != nil) != tt.wantErr {
+			err := tt.v.SendNotification(context.Background(), tt.args.data)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Provider.SendNotification() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			require.Equal(t, 1, observedLogs.Len())
 			firstLog := observedLogs.All()[0]
-			assert.Equal(t, "hello world", firstLog.Message)
+			assert.Equal(t, tt.wantLog, firstLog.Message)
+
 		})
 	}
 }

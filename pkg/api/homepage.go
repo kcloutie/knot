@@ -93,7 +93,21 @@ var defaultPageTemplate string = `
 // @Router       /health [post]
 func Home(ctx context.Context, c *gin.Context) {
 
-	homePage := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(defaultPageTemplate, "{{VERSION}}", version.BuildVersion), "{{COMMIT}}", version.Commit), "{{BUILD_DATE}}", version.BuildTime)
+	buildVer := version.BuildVersion
+	if buildVer == "" {
+		buildVer = "nightly"
+	}
+	commit := version.Commit
+	if commit == "" {
+		commit = "unknown"
+	}
+
+	buildDate := version.BuildTime
+	if buildDate == "" {
+		buildDate = "unknown"
+	}
+
+	homePage := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(defaultPageTemplate, "{{VERSION}}", buildVer), "{{COMMIT}}", commit), "{{BUILD_DATE}}", buildDate)
 	c.Data(200, "text/html", []byte(homePage))
 
 }

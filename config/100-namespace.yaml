@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/part-of: knot
+    kubernetes.io/metadata.name: knot
+    openshift.io/cluster-monitoring: "true"
+  name: knot

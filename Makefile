@@ -56,11 +56,11 @@ test-unit: ## Run unit tests
 .PHONY: test-e2e-cleanup
 test-e2e-cleanup: ## cleanup test e2e namespace/pr left open
 	@echo "Cleaning e2e tests..."
-	# @./hack/dev/Stop-TestServer.ps1
+
 
 .PHONY: test-e2e
 test-e2e:  test-e2e-cleanup ## run e2e tests
-	@go test $(GO_TEST_FLAGS) -timeout $(TIMEOUT_E2E)  -failfast -count=1 -tags=e2e $(GO_TEST_FLAGS) ./test
+	@env INTEGRATION_TEST=TRUE go test $(GO_TEST_FLAGS) -timeout $(TIMEOUT_E2E)  -failfast -count=1 $(GO_TEST_FLAGS) ./test
 
 .PHONY: release
 release: unit-test
@@ -78,3 +78,15 @@ docs:
 docs-custom:
 	@echo "Generating Custom Docs..."
 	@go run ./cmd/gen-docs --custom --doc-path docs/knot-custom
+
+.PHONY: dev
+dev: ## deploys dev setup locally
+	./hack/dev/kind/install.sh
+
+.PHONY: rdev 
+rdev: ## redeploy knot in local setup
+	./hack/dev/kind/install.sh -p
+
+.PHONY: ddev 
+ddev: ## delete knot deployment
+	./hack/dev/kind/install.sh -d

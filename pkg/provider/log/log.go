@@ -37,21 +37,26 @@ func (v *Provider) SetNotification(notification config.Notification) {
 }
 
 func (v *Provider) SendNotification(ctx context.Context, data *message.NotificationData) error {
+	logger := v.log.Sugar()
 	_, err := provider.HasRequiredProperties(v.notification.Properties, v.GetRequiredPropertyNames())
 	if err != nil {
 		return err
 	}
-	message := v.notification.Properties["message"]
+	message, err := v.notification.Properties["message"].GetValue(ctx, data)
+	if err != nil {
+		return err
+	}
 
 	templateConfig := template.NewRenderTemplateOptions()
-	provider.SetGoTemplateOptionValues(v.log, &templateConfig, v.notification.Properties)
+	provider.SetGoTemplateOptionValues(ctx, v.log, &templateConfig, v.notification.Properties)
 
 	renderedMessage, err := template.RenderTemplateValues(ctx, message, fmt.Sprintf("%s_%s", data.ID, v.providerName), data.AsMap(), []string{}, templateConfig)
 	if err != nil {
 		return err
 	}
 
-	v.log.Info(string(renderedMessage))
+	logger.Info(string(renderedMessage))
+
 	return nil
 }
 

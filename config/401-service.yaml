@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: knot-controller
+  namespace: knot
+  labels:
+    app: knot-controller
+    app.kubernetes.io/version: "devel"
+    app.kubernetes.io/part-of: knot
+spec:
+  ports:
+  - name: http-listener
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  # - name: http-metrics
+  #   port: 9090
+  #   protocol: TCP
+  #   targetPort: 9090
+  selector:
+    app.kubernetes.io/metadata.name: knot
+    app.kubernetes.io/part-of: knot
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: knot
+  namespace: knot
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: app.knot-127-0-0-1.nip.io
+    http:
+      paths:
+      - pathType: ImplementationSpecific
+        backend:
+          service:
+            name: knot-controller
+            port:
+              number: 8080

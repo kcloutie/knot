@@ -23,7 +23,6 @@ var (
 	logger *zap.Logger
 )
 
-
 const (
 	RootCommandKey = "root_command"
 	SubCommandKey  = "sub_command"
@@ -81,12 +80,12 @@ func Get() *zap.Logger {
 		developmentCfg := zap.NewDevelopmentEncoderConfig()
 		developmentCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-		cldLog := os.Getenv("CLD_LOG")
-		logToConsole := strings.Contains(strings.ToUpper(cldLog), "CONSOLE")
+		knotLog := os.Getenv("KNOT_LOG")
+		logToConsole := strings.Contains(strings.ToUpper(knotLog), "CONSOLE")
 		if settings.DebugModeEnabled {
 			logToConsole = true
 		}
-		logToFile := strings.Contains(strings.ToUpper(cldLog), "FILE")
+		logToFile := strings.Contains(strings.ToUpper(knotLog), "FILE")
 
 		consoleEncoder := zapcore.NewConsoleEncoder(developmentCfg)
 		fileEncoder := zapcore.NewJSONEncoder(productionCfg)

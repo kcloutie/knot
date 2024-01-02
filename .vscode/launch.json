@@ -13,7 +13,7 @@
       "cwd": "${workspaceRoot}",
       "buildFlags": "-ldflags '-X github.com/kcloutie/knot/pkg/params/version.BuildVersion=v1.0.0 -X github.com/kcloutie/knot/pkg/params/version.Commit=123456789 -X github.com/kcloutie/knot/pkg/params/version.BuildTime=12/06/1976'",
       "env": {
-
+        "LOG_LEVEL":"DEBUG",
       },
       "args": [
         "run", "server", "-c", "test/files/serverConfig.json", "--debug"

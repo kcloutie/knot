@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -31,12 +32,44 @@ func CreateGoTemplatingFuncMap(removeDangerousFuncs bool) template.FuncMap {
 	funcMap["toDnsString"] = ToDnsString
 	funcMap["toAsciiTable"] = toAsciiTable
 	funcMap["toMarkdownTable"] = toMarkdownTable
-
+	funcMap["fromJson"] = FromJson
+	funcMap["firstOrDefault"] = FirstOrDefault
+	funcMap["newArray"] = NewArray
 	if removeDangerousFuncs {
 		delete(funcMap, "env")
 		delete(funcMap, "expandenv")
 	}
 	return funcMap
+}
+
+func NewArray() []interface{} {
+	return []interface{}{}
+}
+
+func FirstOrDefault(defaultVal interface{}, list interface{}) interface{} {
+	tp := reflect.TypeOf(list).Kind()
+	switch tp {
+	case reflect.Slice, reflect.Array:
+		l2 := reflect.ValueOf(list)
+
+		l := l2.Len()
+		if l == 0 {
+			return defaultVal
+		}
+
+		return l2.Index(0).Interface()
+	default:
+		return defaultVal
+	}
+}
+
+func FromJson(data string) (interface{}, error) {
+	var result interface{}
+	err := json.Unmarshal([]byte(data), &result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 // toJson encodes an item into a JSON string

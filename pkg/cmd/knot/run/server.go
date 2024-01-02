@@ -2,6 +2,7 @@ package run
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/MakeNowJust/heredoc"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/kcloutie/knot/pkg/cmd"
 	"github.com/kcloutie/knot/pkg/params"
+	"gopkg.in/yaml.v3"
 )
 
 type ServerCmdOptions struct {
@@ -48,7 +50,10 @@ func ServerCommand(run *params.Run, ioStreams *cli.IOStreams) *cobra.Command {
 				}
 				err = json.Unmarshal(data, serverConfig)
 				if err != nil {
-					cmd.WriteCmdErrorToScreen(err.Error(), ioStreams, true, true)
+					err = yaml.Unmarshal(data, serverConfig)
+					if err != nil {
+						cmd.WriteCmdErrorToScreen(fmt.Sprintf("failed to unmarshal the settings using yaml and json - %v\n\nContents:\n%s", err, string(data)), ioStreams, true, true)
+					}
 				}
 			}
 

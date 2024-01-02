@@ -12,10 +12,13 @@ import (
 	"github.com/kcloutie/knot/pkg/config"
 	knothttp "github.com/kcloutie/knot/pkg/http"
 	"github.com/kcloutie/knot/pkg/listener"
+	"github.com/kcloutie/knot/pkg/logger"
 	uuid "github.com/satori/go.uuid"
 )
 
 func CreateRouter(ctx context.Context, cacheInSeconds int) *gin.Engine {
+	log := logger.FromCtx(ctx)
+	slog := log.Sugar()
 	router := gin.Default()
 
 	router.Use(RequestIdMiddleware())
@@ -27,11 +30,18 @@ func CreateRouter(ctx context.Context, cacheInSeconds int) *gin.Engine {
 	})
 
 	router.GET("/healthz", Health)
+	router.GET("/readyz", Health)
 
 	apiV1 := router.Group("/api/v1")
 	apiV1.Use()
 	{
 		for _, l := range listener.GetListeners() {
+			err := l.Initialize(ctx)
+			if err != nil {
+				slog.Errorf("Failed to initialize listener %s. Error: %v", l.GetName(), err)
+				continue
+			}
+			slog.Debugf("Adding listener %s to router", l.GetName())
 			apiV1.POST(fmt.Sprintf("/%s", l.GetApiPath()), func(c *gin.Context) {
 				ExecuteListener(ctx, c, l)
 			})
