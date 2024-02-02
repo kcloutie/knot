@@ -41,7 +41,7 @@ func HasRequiredProperties(properties map[string]config.PropertyAndValue, requir
 func SetGoTemplateOptionValues(ctx context.Context, log *zap.Logger, config *template.RenderTemplateOptions, properties map[string]config.PropertyAndValue) {
 	propVal, exists := properties[template.LeftDelimPropertyName]
 	if exists {
-		propVal, err := propVal.GetValue(ctx, nil)
+		propVal, err := propVal.GetValue(ctx, log, nil)
 		if err != nil {
 			log.Error(fmt.Sprintf("error getting value for property %s: %s", template.LeftDelimPropertyName, err.Error()))
 		} else {
@@ -51,7 +51,7 @@ func SetGoTemplateOptionValues(ctx context.Context, log *zap.Logger, config *tem
 
 	propVal, exists = properties[template.RightDelimPropertyName]
 	if exists {
-		propVal, err := propVal.GetValue(ctx, nil)
+		propVal, err := propVal.GetValue(ctx, log, nil)
 		if err != nil {
 			log.Error(fmt.Sprintf("error getting value for property %s: %s", template.LeftDelimPropertyName, err.Error()))
 		} else {
@@ -63,7 +63,7 @@ func SetGoTemplateOptionValues(ctx context.Context, log *zap.Logger, config *tem
 	propVal, exists = properties[template.IgnoreTemplateErrors]
 	if exists {
 
-		propVal, err := propVal.GetValue(ctx, nil)
+		propVal, err := propVal.GetValue(ctx, log, nil)
 		if err != nil {
 			log.Error(fmt.Sprintf("error getting value for property %s: %s", template.LeftDelimPropertyName, err.Error()))
 		} else {
@@ -75,4 +75,14 @@ func SetGoTemplateOptionValues(ctx context.Context, log *zap.Logger, config *tem
 			config.IgnoreTemplateErrors = boolValue
 		}
 	}
+}
+
+func GetRequiredPropertyNames(p ProviderInterface) []string {
+	results := []string{}
+	for _, p := range p.GetProperties() {
+		if *p.Required {
+			results = append(results, p.Name)
+		}
+	}
+	return results
 }

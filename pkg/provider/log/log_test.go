@@ -13,6 +13,7 @@ import (
 )
 
 func TestProvider_SendNotification(t *testing.T) {
+	propVal := "hello {{ .data.prop1 }}"
 	type args struct {
 		data         *message.NotificationData
 		notification config.Notification
@@ -37,7 +38,7 @@ func TestProvider_SendNotification(t *testing.T) {
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"message": {Value: "hello {{ .data.prop1 }}"},
+						"message": {Value: &propVal},
 					},
 				},
 			},

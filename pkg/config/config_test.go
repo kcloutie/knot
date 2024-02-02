@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/kcloutie/knot/pkg/gcp"
 	"github.com/kcloutie/knot/pkg/message"
+	"go.uber.org/zap/zaptest"
 )
 
 func TestFromCtx(t *testing.T) {
@@ -50,6 +51,9 @@ func TestFromCtx(t *testing.T) {
 }
 
 func TestGetValue(t *testing.T) {
+	testLogger := zaptest.NewLogger(t)
+	testVal := "test value"
+	ignoreVal := "ignored"
 	data := message.NotificationData{
 		Data: map[string]interface{}{
 			"test": "data test value",
@@ -72,7 +76,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name: "ValueFrom is nil",
 			propVal: PropertyAndValue{
-				Value: "test value",
+				Value: &testVal,
 			},
 			data:    &data,
 			want:    "test value",
@@ -81,7 +85,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name: "ValueFrom is not nil but GcpSecretRef is nil",
 			propVal: PropertyAndValue{
-				Value: "test value",
+				Value: &testVal,
 				ValueFrom: &PropertyValueSource{
 					GcpSecretRef: nil,
 				},
@@ -93,7 +97,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name: "ValueFrom and GcpSecretRef are not nil",
 			propVal: PropertyAndValue{
-				Value: "test value",
+				Value: &testVal,
 				ValueFrom: &PropertyValueSource{
 					GcpSecretRef: &GcpSecretRef{
 						ProjectId: "test-project",
@@ -110,7 +114,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name: "with PayloadValueRef",
 			propVal: PropertyAndValue{
-				Value: "ignored",
+				Value: &ignoreVal,
 				PayloadValue: &PayloadValueRef{
 					PropertyPaths: []string{"data.test2", "data.test"},
 				},
@@ -123,7 +127,7 @@ func TestGetValue(t *testing.T) {
 		{
 			name: "with PayloadValueRef with not existing path",
 			propVal: PropertyAndValue{
-				Value: "ignored",
+				Value: &ignoreVal,
 				PayloadValue: &PayloadValueRef{
 					PropertyPaths: []string{"data.test2", "data.test3"},
 				},
@@ -160,7 +164,7 @@ func TestGetValue(t *testing.T) {
 				// gcp.SecretManagerBasePath = server.URL // Override the base path of the Secret Manager API
 			}
 
-			got, err := tt.propVal.GetValue(ctx, tt.data)
+			got, err := tt.propVal.GetValue(ctx, testLogger, tt.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetValue() error = %v, wantErr %v", err, tt.wantErr)
 				return

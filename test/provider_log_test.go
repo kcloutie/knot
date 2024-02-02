@@ -43,8 +43,9 @@ func TestProviderLog2(t *testing.T) {
 	sc := config.ServerConfiguration{}
 	json.Unmarshal(configBytes, &sc)
 
+	valProp := string(ghTemplateBytes)
 	sc.Notifications[0].Properties["message"] = config.PropertyAndValue{
-		Value: string(ghTemplateBytes),
+		Value: &valProp,
 	}
 
 	jsonBytes, _ := json.Marshal(sc)

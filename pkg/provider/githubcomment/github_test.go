@@ -32,26 +32,26 @@ func TestProvider_GetGithubConfig(t *testing.T) {
 			args: args{
 				data: &message.NotificationData{
 					Data: map[string]interface{}{
-						"token":     "test token",
-						"org":       "test org",
-						"repo":      "test repo",
-						"commitSha": "test commitSha",
-						"prNumber":  "123",
-						"apiUrl":    "test apiUrl",
+						"token":         "test token",
+						"org":           "test org",
+						"repo":          "test repo",
+						"commitSha":     "test commitSha",
+						"prNumber":      "123",
+						"enterpriseUrl": "test enterpriseUrl",
 					},
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"token":     {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.token"}}},
-						"org":       {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
-						"repo":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
-						"commitSha": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
-						"prNumber":  {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
-						"apiUrl":    {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.apiUrl"}}},
+						"token":         {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.token"}}},
+						"org":           {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
+						"repo":          {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
+						"commitSha":     {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
+						"prNumber":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
+						"enterpriseUrl": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.enterpriseUrl"}}},
 					},
 				},
 			},
-			want: github.New(context.Background(), zaptest.NewLogger(t), "test org", "test repo", "test commitSha", "test token", 123, "test apiUrl"),
+			want: github.New(context.Background(), zaptest.NewLogger(t), "test org", "test repo", "test commitSha", "test token", 123, "test enterpriseUrl", false),
 		},
 		{
 			name: "prNumber is not a valid integer",
@@ -59,22 +59,22 @@ func TestProvider_GetGithubConfig(t *testing.T) {
 			args: args{
 				data: &message.NotificationData{
 					Data: map[string]interface{}{
-						"token":     "test token",
-						"org":       "test org",
-						"repo":      "test repo",
-						"commitSha": "test commitSha",
-						"prNumber":  "invalid",
-						"apiUrl":    "test apiUrl",
+						"token":         "test token",
+						"org":           "test org",
+						"repo":          "test repo",
+						"commitSha":     "test commitSha",
+						"prNumber":      "invalid",
+						"enterpriseUrl": "test enterpriseUrl",
 					},
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"token":     {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.token"}}},
-						"org":       {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
-						"repo":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
-						"commitSha": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
-						"prNumber":  {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
-						"apiUrl":    {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.apiUrl"}}},
+						"token":         {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.token"}}},
+						"org":           {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
+						"repo":          {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
+						"commitSha":     {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
+						"prNumber":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
+						"enterpriseUrl": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.enterpriseUrl"}}},
 					},
 				},
 			},
@@ -87,21 +87,21 @@ func TestProvider_GetGithubConfig(t *testing.T) {
 			args: args{
 				data: &message.NotificationData{
 					Data: map[string]interface{}{
-						"token":     "test token",
-						"org":       "test org",
-						"repo":      "test repo",
-						"commitSha": "test commitSha",
-						"prNumber":  "123",
-						"apiUrl":    "test apiUrl",
+						"token":         "test token",
+						"org":           "test org",
+						"repo":          "test repo",
+						"commitSha":     "test commitSha",
+						"prNumber":      "123",
+						"enterpriseUrl": "test enterpriseUrl",
 					},
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"org":       {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
-						"repo":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
-						"commitSha": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
-						"prNumber":  {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
-						"apiUrl":    {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.apiUrl"}}},
+						"org":           {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.org"}}},
+						"repo":          {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.repo"}}},
+						"commitSha":     {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.commitSha"}}},
+						"prNumber":      {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.prNumber"}}},
+						"enterpriseUrl": {PayloadValue: &config.PayloadValueRef{PropertyPaths: []string{"data.enterpriseUrl"}}},
 					},
 				},
 			},
@@ -116,7 +116,7 @@ func TestProvider_GetGithubConfig(t *testing.T) {
 			tt.v.SetLogger(testLogger)
 			tt.v.SetNotification(tt.args.notification)
 
-			got, err := tt.v.GetGithubConfig(ctx, tt.args.data, testLogger)
+			got, err := tt.v.GetServiceConfig(ctx, tt.args.data, testLogger)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Provider.GetGithubConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -124,8 +124,8 @@ func TestProvider_GetGithubConfig(t *testing.T) {
 			if (err != nil) && tt.wantErr {
 				return
 			}
-			if !reflect.DeepEqual(got.ApiUrl, tt.want.ApiUrl) {
-				t.Errorf("Provider.GetGithubConfig() ApiUrl = %v, want %v", got.ApiUrl, tt.want.ApiUrl)
+			if !reflect.DeepEqual(got.EnterpriseUrl, tt.want.EnterpriseUrl) {
+				t.Errorf("Provider.GetGithubConfig() EnterpriseUrl = %v, want %v", got.EnterpriseUrl, tt.want.EnterpriseUrl)
 			}
 			if !reflect.DeepEqual(got.CommitSha, tt.want.CommitSha) {
 				t.Errorf("Provider.GetGithubConfig() CommitSha = %v, want %v", got.CommitSha, tt.want.CommitSha)
@@ -154,10 +154,10 @@ func TestProvider_GetProviderConfig(t *testing.T) {
 		{
 			name: "All properties are valid",
 			props: map[string]config.PropertyAndValue{
-				"planTaskName": {Value: "test planTaskName"},
-				"removeExistingCommentsFromAllPullRequestCommits": {Value: "true"},
-				"removeExistingPullRequestComments":               {Value: "false"},
-				"removeDuplicateCommitComments":                   {Value: "true"},
+				"planTaskName": {Value: toPtrString("test planTaskName")},
+				"removeExistingCommentsFromAllPullRequestCommits": {Value: toPtrString("true")},
+				"removeExistingPullRequestComments":               {Value: toPtrString("false")},
+				"removeDuplicateCommitComments":                   {Value: toPtrString("true")},
 			},
 			want: &ProviderConfig{
 				PlanTaskName: "test planTaskName",
@@ -170,10 +170,10 @@ func TestProvider_GetProviderConfig(t *testing.T) {
 		{
 			name: "Invalid boolean value",
 			props: map[string]config.PropertyAndValue{
-				"planTaskName": {Value: "test planTaskName"},
-				"removeExistingCommentsFromAllPullRequestCommits": {Value: "invalid"},
-				"removeExistingPullRequestComments":               {Value: "true"},
-				"removeDuplicateCommitComments":                   {Value: "true"},
+				"planTaskName": {Value: toPtrString("test planTaskName")},
+				"removeExistingCommentsFromAllPullRequestCommits": {Value: toPtrString("invalid")},
+				"removeExistingPullRequestComments":               {Value: toPtrString("true")},
+				"removeDuplicateCommitComments":                   {Value: toPtrString("true")},
 			},
 			want:    nil,
 			wantErr: true,
@@ -181,9 +181,9 @@ func TestProvider_GetProviderConfig(t *testing.T) {
 		{
 			name: "removeExistingPullRequestComments not supplied",
 			props: map[string]config.PropertyAndValue{
-				"planTaskName": {Value: "test planTaskName"},
-				"removeExistingCommentsFromAllPullRequestCommits": {Value: "true"},
-				"removeDuplicateCommitComments":                   {Value: "true"},
+				"planTaskName": {Value: toPtrString("test planTaskName")},
+				"removeExistingCommentsFromAllPullRequestCommits": {Value: toPtrString("true")},
+				"removeDuplicateCommitComments":                   {Value: toPtrString("true")},
 			},
 			want: &ProviderConfig{
 				PlanTaskName: "test planTaskName",
@@ -212,6 +212,10 @@ func TestProvider_GetProviderConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func toPtrString(val string) *string {
+	return &val
 }
 
 func TestProvider_SendNotification(t *testing.T) {
@@ -296,14 +300,14 @@ func TestProvider_SendNotification(t *testing.T) {
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"token":     {Value: "token"},
-						"org":       {Value: "org"},
-						"repo":      {Value: "repo"},
-						"commitSha": {Value: "sha"},
-						"prNumber":  {Value: "-1"},
-						"apiUrl":    {Value: server.URL},
-						"heading":   {Value: "heading"},
-						"body":      {Value: "body"},
+						"token":         {Value: toPtrString("token")},
+						"org":           {Value: toPtrString("org")},
+						"repo":          {Value: toPtrString("repo")},
+						"commitSha":     {Value: toPtrString("sha")},
+						"prNumber":      {Value: toPtrString("-1")},
+						"enterpriseUrl": {Value: toPtrString(server.URL)},
+						"heading":       {Value: toPtrString("heading")},
+						"body":          {Value: toPtrString("body")},
 					},
 				},
 			},
@@ -317,14 +321,14 @@ func TestProvider_SendNotification(t *testing.T) {
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"token":     {Value: "token"},
-						"org":       {Value: "org"},
-						"repo":      {Value: "repo"},
-						"commitSha": {Value: "sha"},
-						"prNumber":  {Value: "1"},
-						"apiUrl":    {Value: server.URL},
-						"heading":   {Value: "heading"},
-						"body":      {Value: "body"},
+						"token":         {Value: toPtrString("token")},
+						"org":           {Value: toPtrString("org")},
+						"repo":          {Value: toPtrString("repo")},
+						"commitSha":     {Value: toPtrString("sha")},
+						"prNumber":      {Value: toPtrString("1")},
+						"enterpriseUrl": {Value: toPtrString(server.URL)},
+						"heading":       {Value: toPtrString("heading")},
+						"body":          {Value: toPtrString("body")},
 					},
 				},
 			},
@@ -338,15 +342,15 @@ func TestProvider_SendNotification(t *testing.T) {
 				},
 				notification: config.Notification{
 					Properties: map[string]config.PropertyAndValue{
-						"token":     {Value: "token"},
-						"org":       {Value: "org"},
-						"repo":      {Value: "repo"},
-						"commitSha": {Value: "sha"},
-						"prNumber":  {Value: "1"},
-						"apiUrl":    {Value: server.URL},
-						"heading":   {Value: "heading"},
-						"body":      {Value: "body"},
-						"removeExistingCommentsFromAllPullRequestCommits": {Value: "true"},
+						"token":         {Value: toPtrString("token")},
+						"org":           {Value: toPtrString("org")},
+						"repo":          {Value: toPtrString("repo")},
+						"commitSha":     {Value: toPtrString("sha")},
+						"prNumber":      {Value: toPtrString("1")},
+						"enterpriseUrl": {Value: toPtrString(server.URL)},
+						"heading":       {Value: toPtrString("heading")},
+						"body":          {Value: toPtrString("body")},
+						"removeExistingCommentsFromAllPullRequestCommits": {Value: toPtrString("true")},
 					},
 				},
 			},

@@ -16,7 +16,7 @@ import (
 var _ provider.ProviderInterface = (*Provider)(nil)
 
 type Provider struct {
-	log          *zap.Logger
+	Log          *zap.Logger
 	providerName string
 	notification config.Notification
 }
@@ -53,10 +53,14 @@ func New() *Provider {
 }
 
 func (v *Provider) SetLogger(logger *zap.Logger) {
-	v.log = logger
+	v.Log = logger
 }
 func (v *Provider) GetName() string {
 	return v.providerName
+}
+
+func (v *Provider) GetDescription() string {
+	return ""
 }
 
 func (v *Provider) SetNotification(notification config.Notification) {
@@ -64,28 +68,28 @@ func (v *Provider) SetNotification(notification config.Notification) {
 }
 
 func (v *Provider) SendNotification(ctx context.Context, data *message.NotificationData) error {
-	v.log = v.log.With(zap.String("provider", v.providerName))
+	v.Log = v.Log.With(zap.String("provider", v.providerName))
 	_, err := provider.HasRequiredProperties(v.notification.Properties, v.GetRequiredPropertyNames())
 	if err != nil {
 		return err
 	}
 
 	templateConfig := template.NewRenderTemplateOptions()
-	provider.SetGoTemplateOptionValues(ctx, v.log, &templateConfig, v.notification.Properties)
+	provider.SetGoTemplateOptionValues(ctx, v.Log, &templateConfig, v.notification.Properties)
 
-	ghConfig, err := v.GetGithubConfig(ctx, data, v.log)
+	ghConfig, err := v.GetServiceConfig(ctx, data, v.Log)
 	if err != nil {
 		return err
 	}
 
-	v.log = v.log.With(zap.String("org", ghConfig.Org), zap.String("repo", ghConfig.Repo), zap.String("commitSha", ghConfig.CommitSha), zap.Int("pr", ghConfig.PrNumber), zap.String("apiUrl", ghConfig.ApiUrl))
+	v.Log = v.Log.With(zap.String("org", ghConfig.Org), zap.String("repo", ghConfig.Repo), zap.String("commitSha", ghConfig.CommitSha), zap.Int("pr", ghConfig.PrNumber), zap.String("enterpriseUrl", ghConfig.EnterpriseUrl))
 
-	providerConfig, err := v.GetProviderConfig(ctx, data, v.log)
+	providerConfig, err := v.GetProviderConfig(ctx, data, v.Log)
 	if err != nil {
 		return err
 	}
 
-	heading, err := v.notification.Properties["heading"].GetValue(ctx, data)
+	heading, err := v.notification.Properties["heading"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return err
 	}
@@ -94,7 +98,7 @@ func (v *Provider) SendNotification(ctx context.Context, data *message.Notificat
 		return err
 	}
 
-	body, err := v.notification.Properties["body"].GetValue(ctx, data)
+	body, err := v.notification.Properties["body"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return err
 	}
@@ -104,61 +108,61 @@ func (v *Provider) SendNotification(ctx context.Context, data *message.Notificat
 	}
 
 	if providerConfig.RemoveExistingCommentsFromAllPullRequestCommits {
-		v.log.Info("Cleaning up existing commit comments")
+		v.Log.Info("Cleaning up existing commit comments")
 		ghConfig.CleanExistingCommentsOnAllPullRequestCommits(string(renderedHeading))
 		// v.log.Info("Finished cleaning up existing comments on all commits of the pull request")
 	} else {
-		v.log.Info("RemoveExistingCommentsFromAllPullRequestCommits was set to false, skipping the deletion of existing comments")
+		v.Log.Info("RemoveExistingCommentsFromAllPullRequestCommits was set to false, skipping the deletion of existing comments")
 	}
 
 	if ghConfig.PrNumber > 0 {
 		if providerConfig.RemoveExistingPullRequestComments {
-			v.log.Info("Cleaning up existing pull request comments")
+			v.Log.Info("Cleaning up existing pull request comments")
 			ghConfig.CleanExistingCommentsOnPullRequest(string(renderedHeading))
 			// v.log.Info("Finished cleaning up existing comments on the pull request")
 		} else {
-			v.log.Info("RemoveExistingPullRequestComments was set to false, skipping the deletion of existing comments")
+			v.Log.Info("RemoveExistingPullRequestComments was set to false, skipping the deletion of existing comments")
 		}
 	} else {
-		v.log.Info("Pull request number was not greater than 0, skipping the deletion of existing comments")
+		v.Log.Info("Pull request number was not greater than 0, skipping the deletion of existing comments")
 	}
 
 	// Would normally generate the comment body here, but the body is not generated using templates
-	v.log.Info("Creating commit comment")
+	v.Log.Info("Creating commit comment")
 	newComment, err := ghConfig.WriteCommitComment(string(renderedBody), string(renderedHeading), providerConfig.RemoveDuplicateCommitComments)
 	if err != nil {
 		// v.log.Error("failed to write the github commit comment", zap.Error(err))
 		return fmt.Errorf("unable to write github commit comment. Error: %v", err)
 	}
 
-	v.log = v.log.With(zap.String("commitCommentUrl", newComment.GetHTMLURL()))
-	v.log.Info("github commit comment has been created")
+	v.Log = v.Log.With(zap.String("commitCommentUrl", newComment.GetHTMLURL()))
+	v.Log.Info("github commit comment has been created")
 
 	if ghConfig.PrNumber > 0 {
-		v.log.Info("Creating pull request comment")
+		v.Log.Info("Creating pull request comment")
 		newComment, err := ghConfig.WritePullRequestComment(string(renderedBody))
 		if err != nil {
 			// return githubToken, fmt.Errorf("unable to write github pull request comment. Error: %v", err)
 			return fmt.Errorf("unable to write github pull request comment. Error: %v", err)
 		}
 		// r.EventEmitter.EmitMessage(ctx, &notification, zap.InfoLevel, "GithubComment", fmt.Sprintf("github pull request comment has been created here %s", *newComment.HTMLURL))
-		v.log = v.log.With(zap.String("PrCommentUrl", newComment.GetHTMLURL()))
-		v.log.Info("github pull request comment has been created")
+		v.Log = v.Log.With(zap.String("PrCommentUrl", newComment.GetHTMLURL()))
+		v.Log.Info("github pull request comment has been created")
 	} else {
-		v.log.Info("Pull request number was not greater than 0, skipping the creation of the pull request comment")
+		v.Log.Info("Pull request number was not greater than 0, skipping the creation of the pull request comment")
 	}
 
 	return nil
 }
 
 func (v *Provider) GetProviderConfig(ctx context.Context, data *message.NotificationData, log *zap.Logger) (*ProviderConfig, error) {
-	planTaskName, err := v.notification.Properties["planTaskName"].GetValue(ctx, data)
+	planTaskName, err := v.notification.Properties["planTaskName"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		planTaskName = ""
 	}
 
 	removeExistingCommentsFromAllPullRequestCommits := false
-	removeExistingCommentsFromAllPullRequestCommitsStr, err := v.notification.Properties["removeExistingCommentsFromAllPullRequestCommits"].GetValue(ctx, data)
+	removeExistingCommentsFromAllPullRequestCommitsStr, err := v.notification.Properties["removeExistingCommentsFromAllPullRequestCommits"].GetValue(ctx, v.Log, data)
 	if err == nil && removeExistingCommentsFromAllPullRequestCommitsStr != "" {
 		removeExistingCommentsFromAllPullRequestCommits, err = strconv.ParseBool(removeExistingCommentsFromAllPullRequestCommitsStr)
 		if err != nil {
@@ -167,7 +171,7 @@ func (v *Provider) GetProviderConfig(ctx context.Context, data *message.Notifica
 	}
 
 	removeExistingPullRequestComments := true
-	removeExistingPullRequestCommentsStr, err := v.notification.Properties["removeExistingPullRequestComments"].GetValue(ctx, data)
+	removeExistingPullRequestCommentsStr, err := v.notification.Properties["removeExistingPullRequestComments"].GetValue(ctx, v.Log, data)
 	if err == nil && removeExistingPullRequestCommentsStr != "" {
 		removeExistingPullRequestComments, err = strconv.ParseBool(removeExistingPullRequestCommentsStr)
 		if err != nil {
@@ -176,7 +180,7 @@ func (v *Provider) GetProviderConfig(ctx context.Context, data *message.Notifica
 	}
 
 	removeDuplicateCommitComments := true
-	removeDuplicateCommitCommentsStr, err := v.notification.Properties["removeDuplicateCommitComments"].GetValue(ctx, data)
+	removeDuplicateCommitCommentsStr, err := v.notification.Properties["removeDuplicateCommitComments"].GetValue(ctx, v.Log, data)
 	if err == nil && removeDuplicateCommitCommentsStr != "" {
 		removeDuplicateCommitComments, err = strconv.ParseBool(removeDuplicateCommitCommentsStr)
 		if err != nil {
@@ -193,8 +197,8 @@ func (v *Provider) GetProviderConfig(ctx context.Context, data *message.Notifica
 	return &config, nil
 }
 
-func (v *Provider) GetGithubConfig(ctx context.Context, data *message.NotificationData, log *zap.Logger) (*github.GitHubConfiguration, error) {
-	token, err := v.notification.Properties["token"].GetValue(ctx, data)
+func (v *Provider) GetServiceConfig(ctx context.Context, data *message.NotificationData, log *zap.Logger) (*github.GitHubConfiguration, error) {
+	token, err := v.notification.Properties["token"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +206,7 @@ func (v *Provider) GetGithubConfig(ctx context.Context, data *message.Notificati
 		return nil, fmt.Errorf("the github token property was not supplied or was empty")
 	}
 
-	org, err := v.notification.Properties["org"].GetValue(ctx, data)
+	org, err := v.notification.Properties["org"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +214,7 @@ func (v *Provider) GetGithubConfig(ctx context.Context, data *message.Notificati
 		return nil, fmt.Errorf("the github org property was not supplied or was empty")
 	}
 
-	repo, err := v.notification.Properties["repo"].GetValue(ctx, data)
+	repo, err := v.notification.Properties["repo"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +222,7 @@ func (v *Provider) GetGithubConfig(ctx context.Context, data *message.Notificati
 		return nil, fmt.Errorf("the github repo property was not supplied or was empty")
 	}
 
-	commitSha, err := v.notification.Properties["commitSha"].GetValue(ctx, data)
+	commitSha, err := v.notification.Properties["commitSha"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +230,7 @@ func (v *Provider) GetGithubConfig(ctx context.Context, data *message.Notificati
 		return nil, fmt.Errorf("the github commitSha property was not supplied or was empty")
 	}
 
-	prNumberStr, err := v.notification.Properties["prNumber"].GetValue(ctx, data)
+	prNumberStr, err := v.notification.Properties["prNumber"].GetValue(ctx, v.Log, data)
 	if err != nil {
 		return nil, err
 	}
@@ -240,12 +244,15 @@ func (v *Provider) GetGithubConfig(ctx context.Context, data *message.Notificati
 		return nil, fmt.Errorf("failed to convert the supplied pr number '%v' to an integer. Error: %v", prNumberStr, err)
 	}
 
-	apiUrl, err := v.notification.Properties["apiUrl"].GetValue(ctx, data)
+	isEnterprise := false
+	enterpriseUrl, err := v.notification.Properties["enterpriseUrl"].GetValue(ctx, v.Log, data)
 	if err != nil {
-		apiUrl = github.DefaultBaseURL
+		enterpriseUrl = github.DefaultBaseURL
+	} else {
+		isEnterprise = true
 	}
 
-	ghConfig := github.New(ctx, log, org, repo, commitSha, token, prNumber, apiUrl)
+	ghConfig := github.New(ctx, log, org, repo, commitSha, token, prNumber, enterpriseUrl, isEnterprise)
 	return ghConfig, nil
 }
 
@@ -253,6 +260,46 @@ func (v *Provider) GetHelp() string {
 	return ""
 }
 
+func (v *Provider) GetProperties() []config.NotificationProperty {
+	return []config.NotificationProperty{
+		{
+			Name:        "heading",
+			Description: "The heading of the comment. This field supports go templating. The heading is also used to find previous comments to remove",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "body",
+			Description: "The body of the comment. This field supports go templating",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "token",
+			Description: "The github token to use for authentication. This token should have the necessary permissions to write comments to the repository",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "org",
+			Description: "The github organization",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "repo",
+			Description: "The github repository",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "commitSha",
+			Description: "The commit sha where the comment will be written",
+			Required:    config.AsBoolPointer(true),
+		},
+		{
+			Name:        "prNumber",
+			Description: "The pull request number where the comment will be written. If the value is less than 0, the comment will not be written to the pull request",
+			Required:    config.AsBoolPointer(true),
+		},
+	}
+}
+
 func (v *Provider) GetRequiredPropertyNames() []string {
-	return []string{"heading", "body", "token", "org", "repo", "commitSha", "prNumber"}
+	return provider.GetRequiredPropertyNames(v)
 }

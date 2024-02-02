@@ -64,7 +64,7 @@ func TestRemoveCommitComment(t *testing.T) {
 			httpCalls = map[string]string{}
 			testLogger := zaptest.NewLogger(t)
 			ctx := context.Background()
-			c := New(ctx, testLogger, "org", "repo", "sha", "token", 1, server.URL)
+			c := New(ctx, testLogger, "org", "repo", "sha", "token", 1, server.URL, true)
 			client, _ := c.NewClient()
 			c.removeCommitComment(tt.body, tt.commentId, tt.regex, client)
 			calls := []string{}
@@ -141,7 +141,7 @@ func TestRemoveCommitComments(t *testing.T) {
 			// 		CommitSha: "sha",
 			// }
 			// client := github.NewClient(&http.Client{}, server.URL)
-			c := New(ctx, testLogger, "org", "repo", "sha", "token", 1, server.URL)
+			c := New(ctx, testLogger, "org", "repo", "sha", "token", 1, server.URL, true)
 			client, _ := c.NewClient()
 			err := c.removeCommitComments(client, tt.regex, "sha")
 			if err != nil {
@@ -205,7 +205,7 @@ func TestCleanExistingCommentsOnCommit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testLogger := zaptest.NewLogger(t)
 			ctx := context.Background()
-			c := New(ctx, testLogger, "org", "repo", tt.sha, "token", 1, server.URL)
+			c := New(ctx, testLogger, "org", "repo", tt.sha, "token", 1, server.URL, true)
 			err := c.CleanExistingCommentsOnCommit(tt.comment)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CleanExistingCommentsOnCommit() error = %v, wantErr %v", err, tt.wantErr)

@@ -16,6 +16,7 @@ var _ provider.ProviderInterface = (*Provider)(nil)
 type Provider struct {
 	log          *zap.Logger
 	providerName string
+
 	notification config.Notification
 }
 
@@ -32,6 +33,10 @@ func (v *Provider) GetName() string {
 	return v.providerName
 }
 
+func (v *Provider) GetDescription() string {
+	return ""
+}
+
 func (v *Provider) SetNotification(notification config.Notification) {
 	v.notification = notification
 }
@@ -42,7 +47,7 @@ func (v *Provider) SendNotification(ctx context.Context, data *message.Notificat
 	if err != nil {
 		return err
 	}
-	message, err := v.notification.Properties["message"].GetValue(ctx, data)
+	message, err := v.notification.Properties["message"].GetValue(ctx, v.log, data)
 	if err != nil {
 		return err
 	}
@@ -64,6 +69,16 @@ func (v *Provider) GetHelp() string {
 	return ""
 }
 
+func (v *Provider) GetProperties() []config.NotificationProperty {
+	return []config.NotificationProperty{
+		{
+			Name:        "message",
+			Description: "The message to log. This field supports go templating",
+			Required:    config.AsBoolPointer(true),
+		},
+	}
+}
+
 func (v *Provider) GetRequiredPropertyNames() []string {
-	return []string{"message"}
+	return provider.GetRequiredPropertyNames(v)
 }

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/v57/github"
@@ -18,27 +20,29 @@ const (
 )
 
 type GitHubConfiguration struct {
-	context     context.Context
-	logger      *zap.Logger
-	accessToken string
-	Org         string
-	Repo        string
-	CommitSha   string
-	ApiUrl      string
-	PrNumber    int
+	context       context.Context
+	logger        *zap.Logger
+	accessToken   string
+	Org           string
+	Repo          string
+	CommitSha     string
+	EnterpriseUrl string
+	PrNumber      int
+	IsEnterprise  bool
 }
 
-func New(context context.Context, log *zap.Logger, org, repo, commitSha, accessToken string, prNumber int, apiUrl string) *GitHubConfiguration {
+func New(context context.Context, log *zap.Logger, org, repo, commitSha, accessToken string, prNumber int, enterpriseUrl string, isEnterprise bool) *GitHubConfiguration {
 	logger := log.With(zap.String("provider", "githubcomment"), zap.String("org", org), zap.String("repo", repo), zap.String("commitSha", commitSha))
 	return &GitHubConfiguration{
-		context:     context,
-		logger:      logger,
-		accessToken: accessToken,
-		Org:         org,
-		Repo:        repo,
-		CommitSha:   commitSha,
-		PrNumber:    prNumber,
-		ApiUrl:      apiUrl,
+		context:       context,
+		logger:        logger,
+		accessToken:   accessToken,
+		Org:           org,
+		Repo:          repo,
+		CommitSha:     commitSha,
+		PrNumber:      prNumber,
+		EnterpriseUrl: enterpriseUrl,
+		IsEnterprise:  isEnterprise,
 	}
 }
 
@@ -70,18 +74,25 @@ func (c *GitHubConfiguration) WriteCommitComment(body string, commentHeading str
 }
 
 func (c *GitHubConfiguration) NewClient() (*github.Client, error) {
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: c.accessToken},
-	)
-	tc := oauth2.NewClient(c.context, ts)
-	client := github.NewClient(tc)
+	var client *github.Client
+	var httpClient *http.Client
 	var err error
-	if c.ApiUrl != "" {
-		client, err = client.WithEnterpriseURLs(c.ApiUrl, DefaultUploadBaseURL)
+
+	if c.accessToken != "" {
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: c.accessToken},
+		)
+		httpClient = oauth2.NewClient(c.context, ts)
+	}
+	client = github.NewClient(httpClient)
+
+	if c.IsEnterprise {
+		client, err = client.WithEnterpriseURLs(c.EnterpriseUrl, c.EnterpriseUrl)
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	return client, err
 }
 
@@ -109,7 +120,10 @@ func (c *GitHubConfiguration) checkHttpResponse(_ interface{}, resp *github.Resp
 			buf := new(bytes.Buffer)
 			buf.ReadFrom(resp.Body)
 			respBodyString = buf.String()
+		} else {
+			respBodyString = err.Error()
 		}
+
 		return respBodyString, fmt.Errorf("github api error. Response Body: %v", respBodyString)
 	}
 
@@ -224,4 +238,124 @@ func (c *GitHubConfiguration) removeCommitComment(body string, commentId int64, 
 			c.logger.Info("removed github commit comment", zap.String("commentId", fmt.Sprintf("%v", commentId)))
 		}
 	}
+}
+
+func (c *GitHubConfiguration) WriteCommitCheckStatus(state string, context string, targetUrl string, description string) (*github.RepoStatus, error) {
+	client, err := c.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	commitStatus := &github.RepoStatus{
+		State:       &state,
+		Context:     &context,
+		TargetURL:   &targetUrl,
+		Description: &description,
+	}
+
+	newCommitStatus, resp, err := client.Repositories.CreateStatus(c.context, c.Org, c.Repo, c.CommitSha, commitStatus)
+
+	_, err = c.checkHttpResponse(newCommitStatus, resp, err)
+	return newCommitStatus, err
+
+}
+
+func (c *GitHubConfiguration) GetCommitCheckStatus(state string, context string, targetUrl string, description string) ([]*github.RepoStatus, error) {
+	client, err := c.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	statuses, resp, err := client.Repositories.ListStatuses(c.context, c.Org, c.Repo, c.CommitSha, &github.ListOptions{})
+	_, err = c.checkHttpResponse(statuses, resp, err)
+	return statuses, err
+
+}
+
+func (c *GitHubConfiguration) WriteCommitCheckStatusIfFailedDoesNotExist(state string, context string, targetUrl string, description string) (*github.RepoStatus, error) {
+	status, err := c.GetCommitCheckStatus(state, context, targetUrl, description)
+
+	if err != nil {
+		return nil, err
+	}
+	if state == "success" {
+		for _, val := range status {
+			state := *val.State
+			if *val.Context == context && (state == "failure" || state == "error") {
+				return nil, nil
+			}
+		}
+	}
+
+	return c.WriteCommitCheckStatus(state, context, targetUrl, description)
+}
+
+func (c *GitHubConfiguration) CreateDeploymentAndStatus(environment string, envIsProd bool, autoMerge bool, description string, requiredContexts []string, state string, autoInactive bool, logsUrl *string, environmentUrl *string) (*github.Deployment, *github.DeploymentStatus, error) {
+
+	deployment, err := c.CreateDeployment(environment, envIsProd, autoMerge, description, requiredContexts)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create the deployment object for environment '%v' in the '%v/%v' repository on commit %v. - %v", environment, c.Org, c.Repo, c.CommitSha, err)
+	}
+
+	deploymentStatus, err := c.CreateDeploymentStatus(*deployment.ID, environment, state, autoInactive, description, logsUrl, environmentUrl)
+	if err != nil {
+		deploymentIdString := strconv.FormatInt(*deployment.ID, 10)
+		return deployment, nil, fmt.Errorf("failed to create the deployment status on deployment ID %v for environment '%v/%v' in the '%v' repository on commit %v. - %v", deploymentIdString, environment, c.Org, c.Repo, c.CommitSha, err)
+	}
+
+	return deployment, deploymentStatus, nil
+
+}
+
+func (c *GitHubConfiguration) CreateDeployment(environment string, envIsProd bool, autoMerge bool, description string, requiredContexts []string) (*github.Deployment, error) {
+	client, err := c.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	isProd := false
+	isTrans := true
+
+	if envIsProd {
+		isProd = true
+		isTrans = false
+	}
+
+	req := &github.DeploymentRequest{
+		Ref:                   &c.CommitSha,
+		RequiredContexts:      &requiredContexts,
+		Environment:           &environment,
+		Description:           &description,
+		TransientEnvironment:  &isTrans,
+		ProductionEnvironment: &isProd,
+		AutoMerge:             &autoMerge,
+	}
+
+	deployment, resp, err := client.Repositories.CreateDeployment(c.context, c.Org, c.Repo, req)
+
+	_, err = c.checkHttpResponse(deployment, resp, err)
+	return deployment, err
+
+}
+
+func (c *GitHubConfiguration) CreateDeploymentStatus(deploymentId int64, environment string, state string, autoInactive bool, description string, logsUrl *string, environmentUrl *string) (*github.DeploymentStatus, error) {
+	client, err := c.NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	req := &github.DeploymentStatusRequest{
+		State:          &state,
+		Environment:    &environment,
+		Description:    &description,
+		AutoInactive:   &autoInactive,
+		LogURL:         logsUrl,
+		EnvironmentURL: environmentUrl,
+	}
+
+	deployment, resp, err := client.Repositories.CreateDeploymentStatus(c.context, c.Org, c.Repo, deploymentId, req)
+
+	_, err = c.checkHttpResponse(deployment, resp, err)
+	return deployment, err
+
 }

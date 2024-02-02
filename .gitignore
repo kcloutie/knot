@@ -11,3 +11,4 @@ knot.log
 knot.exe~
 **.exe
 /bin
+test/files/mytesting.yaml

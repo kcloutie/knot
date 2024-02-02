@@ -4,7 +4,7 @@ BUILD_DATE=NA
 BUILD_COMMIT=$(shell git rev-parse HEAD)
 BUILD_VERSION=$(shell git describe --abbrev=0 --tags)
 BUILD_DATE="$$(date --iso=seconds)"
-SERVER_CONFIG_FILE=test/files/serverConfig.json
+SERVER_CONFIG_FILE=test/files/serverConfig.yaml
 GO_TEST_FLAGS +=
 
 TIMEOUT_UNIT = 20m

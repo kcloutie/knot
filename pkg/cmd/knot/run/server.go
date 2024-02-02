@@ -38,7 +38,7 @@ func ServerCommand(run *params.Run, ioStreams *cli.IOStreams) *cobra.Command {
 		`, "`"),
 		Example: heredoc.Doc(`
 			# run an API server with a configuration
-			knot run server -c ./tests/files/serverConfig.json
+			knot run server -c ./tests/files/serverConfig.yaml
 		`),
 		Run: func(cCmd *cobra.Command, args []string) {
 			ctx := cmd.InitContextWithLogger("run", "server")
